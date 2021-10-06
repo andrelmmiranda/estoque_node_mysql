@@ -2,7 +2,6 @@ const express = require('express');
 const server = express();
 const consign = require('consign')
 const port = 3000;
-const path = require('path');
 
 server.set('view engine', 'ejs');
 server.set('views', `${__dirname}/view`);

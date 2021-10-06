@@ -1,14 +1,19 @@
 module.exports = server =>{
-    const mongoose = require('mongoose');
-    const dbAccess = require('../utils/dbAccess');
-    const { readFileSync } = require('fs');
+    const { keys } = require('../../../6-node/password');
     const responseError = require('../utils/responseError');
 
-    mongoose.connect(dbAccess(readFileSync('../access-mongodb.txt', { encoding:'utf8', flag:'r' }), 'biblioteca'), { useNewUrlParser: true, useUnifiedTopology: true });
+    const mysql= require('mysql2');
 
-    const Livros = mongoose.model('livros', {
-        titulo: String,
-        autor: String,
+    const connection = mysql.createConnection({
+        host: keys.host,
+        user: keys.user,
+        password: keys.password,
+        database: keys.database
+    });
+
+    connection.connect((error)=>{
+        if(error) console.error('No funfs ' + error);
+        return;
     });
 
     server.get('/', (_, response)=>{
@@ -16,75 +21,69 @@ module.exports = server =>{
     });
 
     server.get('/cadastrar', (_, response)=>{
-        response.render('formCadastro');
-    })
+        response.render('pages/formCadastro');
+    });
 
     server.post('/cadastrar', (request, response)=>{
-        const livro = new Livros();
-
-        livro.titulo = request.body.titulo;
-        livro.autor = request.body.autor;
-
-        livro.save(error =>{
+        const { codigo_produto, nome_produto, quantidade_produto } = request.body;
+      
+        connection.query(`INSERT INTO estoque (codigo_produto, nome_produto, quantidade_produto) VALUES ('${ codigo_produto }', '${ nome_produto }', ${ quantidade_produto })`, (error, _)=>{
             responseError(error, response, 'Erro de cadastro');
 
-            response.render('formCadastro');
-        })
+            response.render('pages/formCadastro');
+        });
     });
 
     server.get('/listar', (_, response)=>{
-        Livros.find({}, (error, livros) => {
+        connection.query("SELECT * FROM estoque", (error, produtos)=>{
             responseError(error, response, "Erro ao consultar livros");
-            
-            response.render('listaLivros', { livros });
-        });
-    })
 
-    server.get('/deletar:id', (request, response)=>{
-        Livros.deleteOne({_id: request.params.id}, (error, response)=>{
-            responseError(error, response, 'Erro ao deletar livro');
+            response.render('pages/listaProdutos', { produtos });
         });
-
-        response.redirect('/listar');
     });
 
     server.get('/deletar:id', (request, response)=>{
-        Livros.deleteOne({_id: request.params.id}, (error, response)=>{
-            responseError(error, response, 'Erro ao deletar livro');
-        });
+        const { id } = request.params;
 
-        response.redirect('/listar');
+        connection.query(`DELETE FROM estoque WHERE id_produto = ${ id }`, (error, _)=>{
+            responseError(error, response, 'Erro ao deletar produto');
+
+            response.redirect('/listar');
+        });
     });
 
     server.get('/atualizar:id', (request, response)=>{
-        Livros.findById(request.params.id, (error, livro)=> {
-            responseError(error, response, "Erro ao consultar livro");
-    
-            response.render('editarLivro', { livro });
+        const { id } = request.params;
+
+        connection.query(`SELECT * FROM estoque WHERE id_produto = ${ id }`, (error, produto)=>{
+            responseError(error, response, "Erro ao consultar produto");
+
+            const [produtoParams] = produto;
+
+            response.render('pages/editarProduto',  produtoParams);
         });
     });
 
     server.post('/atualizar', (request, response)=>{
-        Livros.findById(request.body.id, (error, livro)=>{
-            responseError(error, response, "Erro ao atualizar livro");
+        const { codigo_produto, nome_produto, quantidade_produto, id_produto } = request.body;
 
-            livro.titulo = request.body.titulo
-            livro.autor = request.body.autor
+        console.log(request.body)
 
-            livro.save(error =>{
-                responseError(error, response, "Erro ao atualizar livro");
-        
-                return response.redirect('/listar');
-            });
+        connection.query(`UPDATE estoque SET codigo_produto = ${ codigo_produto }, nome_produto = '${ nome_produto }', quantidade_produto = ${ quantidade_produto } WHERE id_produto=${id_produto}`, (error, _)=>{
+            responseError(error, response, "Erro ao atualizar produto");
 
+            response.redirect('/listar');
         });
     });
 
-    server.get("/pesquisar",(request,response)=>{
-        const busca = request.query.pesquisar;
-        Livros.find({$or:[{titulo:busca},{autor:busca}]},(error, livros)=>{
-            responseError(error, response, "erro ao pesquisar");
-            response.render("listaLivros", { livros });
+
+    server.get('/pesquisar', (request, response)=>{
+        const { pesquisar } = request.query;
+   
+        connection.query(`SELECT * FROM estoque WHERE codigo_produto = ${ pesquisar } OR nome_produto = "${ pesquisar }" OR quantidade_produto = ${ pesquisar }`, (error, produtos)=>{
+            responseError(error, response, "Erro ao filtrar produto");
+
+            response.render('pages/listaProdutos', { produtos });
         })
-    });
+    })
 }

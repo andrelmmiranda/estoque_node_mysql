@@ -19,41 +19,43 @@
             <div class="col">
                 <div class="row mt-5">
                     <div class="col-6"> 
-                        <h1>Lista de Livros</h1>
+                        <h1>Lista de produtos</h1>
                     </div>   
                     <div class="col-6 text-right">
-                        <a href="/cadastrar" class="btn btn-primary my-3 text-center">Cadastrar livro</a> 
+                        <a href="/cadastrar" class="btn btn-primary my-3 text-center">Cadastrar produto</a> 
                     </div>
                 </div>
                 <form action="/pesquisar" method="GET">
                     <div class="input-group">
                         <input class="form-control" type="search" id="pesquisar" name="pesquisar">
                         <div class="input-group-btn">
-                            <button class="btn btn-primary" type="submit">Pesquisar</button>
-                            <a href="/listar" class="btn btn-primary text-center">limpar</a> 
+                            <button class="btn btn-primary" type="submit" id="btnTeste">Pesquisar</button>
+                            <a href="/listar" class="btn btn-primary text-center">Listar</a> 
                         </div>
                     </div>
                 </form>
                 <table class="table table-sm table-hover">
                     <thead>
                         <tr>
-                            <th>Titulo: </th>
-                            <th>Autor: </th>
+                            <th>Código: </th>
+                            <th>Item: </th>
+                            <th>Quantidade: </th>
                         </tr>
                     </thead>
                     <tbody>
-                        <% if(livros == ""){ %>
+                        <% if(produtos == ""){ %>
                             <tr>
-                                <td colspan="5" class="alert-warning">Nenhum livro cadastrado</td>
+                                <td colspan="5" class="alert-warning">Nenhum produto cadastrado</td>
                             </tr>
                         <% } else{ %>
-                            <% livros.map(livro =>{ %>
+                            <% produtos.map(produto =>{ %>
                             <tr>
-                                <td><%= livro.titulo %></td>
-                                <td><%= livro.autor %></td>
+                                <td><%= produto.codigo_produto %></td>
+                                <td><%= produto.nome_produto %></td>
+                                <td><%= produto.quantidade_produto %></td>
                                 <td>
-                                    <a href="/atualizar<%= livro._id %>" class="btn btn-sm btn-success">Editar</a>
-                                    <a href="/deletar<%= livro._id %>" class="btn btn-sm btn-danger"> Excluir</a>
+                                    <a href="/atualizar<%= produto.id_produto %>" class="btn btn-sm btn-success">Editar</a>
+                                    <a href="/deletar<%= produto.id_produto %>" class="btn btn-sm btn-danger"> Excluir</a>
                                 </td>
                             </tr>
                             <% }) %>
